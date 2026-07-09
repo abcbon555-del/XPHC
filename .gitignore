@@ -1,0 +1,31 @@
+# Backend (Python)
+backend/venv/
+backend/venv312/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env
+backend/storage/
+
+# Web Admin (Node)
+web-admin/node_modules/
+web-admin/dist/
+web-admin/.env
+web-admin/.env.local
+web-admin/tsconfig.tsbuildinfo
+
+# Mobile (Flutter)
+mobile-app/.dart_tool/
+mobile-app/build/
+mobile-app/.flutter-plugins
+mobile-app/.flutter-plugins-dependencies
+mobile-app/android/local.properties
+mobile-app/ios/Pods/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings (may contain machine-specific permissions)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

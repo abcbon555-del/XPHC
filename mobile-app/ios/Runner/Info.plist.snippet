@@ -1,0 +1,26 @@
+<!--
+THAM KHAO: cac key can them vao ios/Runner/Info.plist sau khi chay
+`flutter create .` (lenh do se sinh Info.plist day du cho iOS).
+Copy cac the <key>/<string> ben duoi vao trong the <dict> chinh cua file that.
+-->
+
+<key>NSCameraUsageDescription</key>
+<string>Ung dung can quyen truy cap Camera de chup anh/quay video hien truong vi pham.</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>Ung dung can quyen Microphone de quay video hien truong co am thanh.</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Ung dung can quyen truy cap Thu vien anh de dinh kem anh/video co san.</string>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Ung dung can quyen truy cap vi tri de xac dinh toa do thua dat vi pham tren ban do.</string>
+
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Ung dung can quyen truy cap vi tri de xac dinh toa do thua dat vi pham tren ban do.</string>
+
+<!--
+Khong can khoi tao SDK/API key nao trong AppDelegate.swift: ban do dung
+flutter_map + OpenStreetMap/Esri World Imagery (mien phi), khong phai
+Google Maps SDK, nen khong can buoc GMSServices.provideAPIKey(...).
+-->
