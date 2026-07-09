@@ -1,24 +1,43 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15
     restart: unless-stopped
     environment:
       POSTGRES_DB: xphc_db
-      POSTGRES_USER: xphc_app_role
-      POSTGRES_PASSWORD: change_me
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: change_me_postgres
     ports:
       - "5432:5432"
     volumes:
       - xphc_pgdata:/var/lib/postgresql/data
+      # Tao xphc_app_role (KHONG phai owner) ngay khi container khoi tao lan dau.
+      - ./docker/init-role.sql:/docker-entrypoint-initdb.d/init-role.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Job mot lan: tao schema (bang role owner `postgres`) roi GRANT quyen co
+  # kiem soat cho xphc_app_role. KHONG duoc chay migration bang xphc_app_role -
+  # xem backend/README.md muc "Luu y bao mat audit_log".
+  migrate:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:change_me_postgres@db:5432/xphc_db
+    command: sh -c "alembic upgrade head && python scripts/grant_app_role.py"
 
   api:
     build: .
     restart: unless-stopped
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
     environment:
+      ENVIRONMENT: development
       DATABASE_URL: postgresql+asyncpg://xphc_app_role:change_me@db:5432/xphc_db
       SECRET_KEY: change_this_to_a_random_secret_string
       CORS_ORIGINS: http://localhost:5173

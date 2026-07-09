@@ -3,11 +3,21 @@
 ## Chạy nhanh với Docker
 
 ```bash
-cp .env.example .env
 docker compose up --build
 ```
 
+`docker-compose.yml` tự động: khởi tạo Postgres với `postgres` làm chủ sở hữu, tạo role runtime `xphc_app_role`
+(không phải chủ sở hữu — đúng thiết kế bảo mật, xem mục dưới), chạy migration bằng role `postgres`, rồi cấp quyền
+có kiểm soát cho `xphc_app_role` trước khi khởi động API. Không cần tạo file `.env` cho luồng Docker này (các biến
+môi trường cần thiết đã khai trong `docker-compose.yml`).
+
 API chạy tại `http://localhost:8000`, tài liệu Swagger tại `http://localhost:8000/docs`.
+
+Tạo tài khoản Admin đầu tiên:
+
+```bash
+docker compose exec api python scripts/create_admin.py --username admin --password <mat_khau> --hoten "Chu tich xa"
+```
 
 ## Chạy thủ công (dev, không dùng Docker)
 
@@ -44,6 +54,8 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO xphc_app_role;
 REVOKE UPDATE, DELETE, TRUNCATE ON audit_log FROM xphc_app_role;
 GRANT SELECT, INSERT ON audit_log TO xphc_app_role;
 ```
+
+(Hoặc chạy nhanh bằng script có sẵn thay vì gõ tay: `DATABASE_URL=postgresql+asyncpg://postgres:<mat_khau>@localhost:5432/xphc_db python scripts/grant_app_role.py`)
 
 Cuối cùng chạy app (dùng `DATABASE_URL` trong `.env`, đã trỏ tới `xphc_app_role`):
 

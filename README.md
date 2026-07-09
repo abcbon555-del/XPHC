@@ -13,23 +13,51 @@ Xem tài liệu kiến trúc đầy đủ tại [`docs/ARCHITECTURE.md`](docs/AR
 
 ## Chạy nhanh (dev)
 
+### Cách 1 — Toàn bộ backend bằng Docker (đơn giản nhất)
+
 ```bash
-# 1. Backend + Database
+cd backend
+docker compose up --build   # tu dong: tao DB, tao role rieng cho app, chay migration, cap quyen, khoi dong API
+```
+
+Compose sẽ tự tạo role `xphc_app_role` **không phải chủ sở hữu database** (đúng thiết kế bảo mật audit log —
+xem `backend/README.md` mục "Lưu ý bảo mật audit_log"), chạy migration bằng role `postgres`, rồi cấp quyền có
+kiểm soát cho `xphc_app_role`. API chạy tại `http://localhost:8000`.
+
+Tạo tài khoản Admin đầu tiên (container `api` đang chạy):
+
+```bash
+docker compose exec api python scripts/create_admin.py --username admin --password <mat_khau> --hoten "Chu tich xa"
+```
+
+### Cách 2 — Backend chạy thủ công (không Docker), chỉ dùng Docker cho Postgres
+
+```bash
 cd backend
 cp .env.example .env
-docker compose up --build -d db     # chi chay Postgres truoc
-alembic upgrade head                 # tao schema
+docker compose up --build -d db          # chi chay Postgres truoc (da co san xphc_app_role, khong phai owner)
+py -3.12 -m venv venv && venv\Scripts\activate
+pip install -r requirements.txt
+# Chay migration bang role owner (postgres), KHONG phai xphc_app_role - xem backend/README.md
+DATABASE_URL=postgresql+asyncpg://postgres:change_me_postgres@localhost:5432/xphc_db alembic upgrade head
+DATABASE_URL=postgresql+asyncpg://postgres:change_me_postgres@localhost:5432/xphc_db python scripts/grant_app_role.py
 python scripts/create_admin.py --username admin --password <mat_khau> --hoten "Chu tich xa"
-uvicorn app.main:app --reload        # hoac: docker compose up --build
+uvicorn app.main:app --reload
+```
 
-# 2. Web Admin
-cd ../web-admin
+### Web Admin
+
+```bash
+cd web-admin
 npm install
 cp .env.example .env
 npm run dev                          # http://localhost:5173
+```
 
-# 3. Mobile App
-cd ../mobile-app
+### Mobile App
+
+```bash
+cd mobile-app
 flutter create . --org com.xphc --project-name xphc_mobile   # sinh phan native con thieu
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1   # khong can API key nao
 ```
