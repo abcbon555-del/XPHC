@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { listHoSo } from "../api/hoSo";
+import { listHoSoBanDo } from "../api/hoSo";
 import { listThon } from "../api/thon";
 import type { Thon, TrangThaiHoSo } from "../types";
 import { MapView } from "../components/MapView";
@@ -25,16 +25,16 @@ export function DashboardMapPage() {
 
   const { data: thonList = [] } = useQuery({ queryKey: ["thon"], queryFn: listThon });
   const { data: hoSoList = [], isLoading } = useQuery({
-    queryKey: ["ho-so", thonId, trangThai],
+    queryKey: ["ho-so-ban-do", thonId, trangThai],
     queryFn: () =>
-      listHoSo({
+      listHoSoBanDo({
         thon_id: thonId || undefined,
         trang_thai_xu_ly: (trangThai as TrangThaiHoSo) || undefined,
       }),
   });
   // Danh sách đầy đủ, không lọc - dùng riêng cho biểu đồ thống kê theo Thôn
   // để bộ lọc bản đồ không làm sai lệch biểu đồ tổng quan.
-  const { data: allHoSoList = [] } = useQuery({ queryKey: ["ho-so", "all"], queryFn: () => listHoSo() });
+  const { data: allHoSoList = [] } = useQuery({ queryKey: ["ho-so-ban-do", "all"], queryFn: () => listHoSoBanDo() });
 
   const thonMap = useMemo(() => {
     const map: Record<string, Thon> = {};

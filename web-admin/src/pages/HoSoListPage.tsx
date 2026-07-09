@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FilePlus2 } from "lucide-react";
-import { listHoSo } from "../api/hoSo";
+import { ArrowRight, FilePlus2, Trash2 } from "lucide-react";
+import { deleteHoSo, listHoSo } from "../api/hoSo";
 import { listThon } from "../api/thon";
 import type { TrangThaiHoSo } from "../types";
 import { Layout } from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
+import { extractErrorMessage } from "../utils/errors";
 
 const TRANG_THAI_LABEL: Record<TrangThaiHoSo, string> = {
   moi_phat_hien: "Mới phát hiện",
@@ -22,6 +23,7 @@ const BADGE_CLASS: Record<TrangThaiHoSo, string> = {
 
 export function HoSoListPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [thonId, setThonId] = useState("");
   const [tuNgay, setTuNgay] = useState("");
   const [denNgay, setDenNgay] = useState("");
@@ -36,6 +38,17 @@ export function HoSoListPage() {
         den_ngay: denNgay || undefined,
       }),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteHoSo(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ho-so-list"] }),
+  });
+
+  function handleDelete(id: string, soBienBan: string) {
+    if (window.confirm(`Xóa vĩnh viễn hồ sơ "${soBienBan}"? Toàn bộ tệp đính kèm sẽ bị xóa theo. Không thể hoàn tác.`)) {
+      deleteMutation.mutate(id);
+    }
+  }
 
   const thonMap = useMemo(() => Object.fromEntries(thonList.map((t) => [t.id, t.ten_thon])), [thonList]);
 
@@ -79,6 +92,12 @@ export function HoSoListPage() {
         </div>
       </div>
 
+      {deleteMutation.isError && (
+        <div className="error-banner" style={{ marginBottom: 12 }}>
+          {extractErrorMessage(deleteMutation.error)}
+        </div>
+      )}
+
       <div className="card table-wrap">
         <table className="data-table">
           <thead>
@@ -104,12 +123,24 @@ export function HoSoListPage() {
                 </td>
                 <td>{hoSo.so_tien_phat.toLocaleString("vi-VN")} VNĐ</td>
                 <td>
-                  <Link
-                    to={`/ho-so/${hoSo.id}`}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--color-accent)", fontWeight: 600, fontSize: 13 }}
-                  >
-                    Xem hồ sơ <ArrowRight size={14} />
-                  </Link>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <Link
+                      to={`/ho-so/${hoSo.id}`}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--color-accent)", fontWeight: 600, fontSize: 13 }}
+                    >
+                      Xem hồ sơ <ArrowRight size={14} />
+                    </Link>
+                    {user?.is_admin && (
+                      <button
+                        onClick={() => handleDelete(hoSo.id, hoSo.so_bien_ban)}
+                        disabled={deleteMutation.isPending}
+                        title="Xóa hồ sơ"
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-danger)", padding: 2, display: "flex" }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

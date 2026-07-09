@@ -5,13 +5,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, apply_view_scope_filter, require_nhap_lieu
+from app.api.deps import CurrentUser, apply_view_scope_filter, require_admin, require_nhap_lieu
 from app.db.session import get_db
 from app.models.ho_so import HoSoViPham
 from app.schemas.ho_so import HoSoCreate, HoSoOut, HoSoSyncItem, HoSoUpdate
 from app.services.so_bien_ban_service import generate_so_bien_ban
+from app.services.storage_service import delete_ho_so_directory
 
 router = APIRouter(prefix="/ho-so", tags=["ho-so"])
+
+# Cac truong chi Quan tri vien duoc sua (danh gia lai toan bo hien truong/doi tuong),
+# khac voi cap nhat trang thai xu ly/so tien phat ma can bo nhap lieu van duoc lam.
+ADMIN_ONLY_FIELDS = {"doi_tuong_id", "thon_id", "linh_vuc_id", "hanh_vi_id"}
 
 
 @router.get("", response_model=list[HoSoOut])
@@ -49,6 +54,26 @@ async def list_ho_so(
     return result.scalars().all()
 
 
+@router.get("/ban-do", response_model=list[HoSoOut])
+async def list_ho_so_ban_do(
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+    thon_id: uuid.UUID | None = None,
+    trang_thai_xu_ly: str | None = None,
+):
+    """Du lieu day du cho Ban do so vi pham (Dashboard) - KHONG ap dung gioi han
+    pham_vi_xem: moi tai khoan da dang nhap deu thay toan bo vu viec tren dia ban
+    de nam duoc buc tranh chung. Gioi han xem chi ap dung cho danh sach ho so chi
+    tiet/quan ly (GET /ho-so) va xuat bao cao Excel."""
+    stmt = select(HoSoViPham)
+    if thon_id is not None:
+        stmt = stmt.where(HoSoViPham.thon_id == thon_id)
+    if trang_thai_xu_ly is not None:
+        stmt = stmt.where(HoSoViPham.trang_thai_xu_ly == trang_thai_xu_ly)
+    result = await db.execute(stmt.order_by(HoSoViPham.ngay_lap.desc()))
+    return result.scalars().all()
+
+
 @router.get("/{ho_so_id}", response_model=HoSoOut)
 async def get_ho_so(ho_so_id: uuid.UUID, current_user: CurrentUser, db: AsyncSession = Depends(get_db)):
     ho_so = await db.get(HoSoViPham, ho_so_id)
@@ -76,16 +101,37 @@ async def update_ho_so(
     ho_so_id: uuid.UUID,
     payload: HoSoUpdate,
     db: AsyncSession = Depends(get_db),
-    _perm=Depends(require_nhap_lieu),
+    current_user=Depends(require_nhap_lieu),
 ):
     ho_so = await db.get(HoSoViPham, ho_so_id)
     if ho_so is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hồ sơ")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+
+    updates = payload.model_dump(exclude_unset=True)
+    if not current_user.is_admin and ADMIN_ONLY_FIELDS & updates.keys():
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, detail="Chỉ Quản trị viên được sửa đối tượng/thôn/lĩnh vực/hành vi vi phạm"
+        )
+
+    for field, value in updates.items():
         setattr(ho_so, field, value)
     await db.commit()
     await db.refresh(ho_so)
     return ho_so
+
+
+@router.delete("/{ho_so_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_ho_so(
+    ho_so_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _perm=Depends(require_admin),
+):
+    ho_so = await db.get(HoSoViPham, ho_so_id)
+    if ho_so is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hồ sơ")
+    await db.delete(ho_so)  # cascade xoa ho_so_files (ondelete=CASCADE o DB)
+    await db.commit()
+    delete_ho_so_directory(ho_so_id)
 
 
 @router.post("/sync", response_model=list[HoSoOut])

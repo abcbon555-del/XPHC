@@ -18,6 +18,12 @@ const MAU_THEO_TRANG_THAI: Record<TrangThaiHoSo, string> = {
   da_giai_quyet_dut_diem: "#22a06b", // Xanh la
 };
 
+const TRANG_THAI_TEXT: Record<TrangThaiHoSo, string> = {
+  moi_phat_hien: "Mới phát hiện",
+  da_ra_quyet_dinh: "Đã ra Quyết định",
+  da_giai_quyet_dut_diem: "Đã giải quyết dứt điểm",
+};
+
 function makeColoredIcon(color: string) {
   return L.divIcon({
     className: "xphc-pin",
@@ -90,6 +96,8 @@ export function MapView({ hoSoList, thonMap }: Props) {
         <div><span style="color:#667085">Thôn:</span> ${thonTen}</div>
         <div><span style="color:#667085">Địa chỉ:</span> ${hoSo.dia_chi_map ?? "(chưa có)"}</div>
         <div><span style="color:#667085">Ngày lập:</span> ${new Date(hoSo.ngay_lap).toLocaleDateString("vi-VN")}</div>
+        <div><span style="color:#667085">Trạng thái:</span> ${TRANG_THAI_TEXT[hoSo.trang_thai_xu_ly]}</div>
+        <div><span style="color:#667085">Số tiền phạt:</span> ${hoSo.so_tien_phat.toLocaleString("vi-VN")} VNĐ</div>
       `;
       const btn = document.createElement("button");
       btn.textContent = "Mở hồ sơ gốc →";

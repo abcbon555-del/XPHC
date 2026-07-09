@@ -39,6 +39,11 @@ class HoSoUpdate(BaseModel):
     kinh_do: float | None = None
     vi_do: float | None = None
     dia_chi_map: str | None = None
+    # Cac truong duoi day chi Quan tri vien duoc sua (xem ADMIN_ONLY_FIELDS trong endpoint ho_so.py)
+    doi_tuong_id: uuid.UUID | None = None
+    thon_id: uuid.UUID | None = None
+    linh_vuc_id: uuid.UUID | None = None
+    hanh_vi_id: uuid.UUID | None = None
 
 
 class HoSoOut(HoSoBase):

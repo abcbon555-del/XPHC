@@ -1,3 +1,4 @@
+import shutil
 import uuid
 from pathlib import Path
 
@@ -85,3 +86,16 @@ def delete_stored_file(relative_path: str) -> None:
         return
     if path.exists() and path.is_file():
         path.unlink()
+
+
+def delete_ho_so_directory(ho_so_id: uuid.UUID) -> None:
+    """Xoa toan bo thu muc file dinh kem cua mot ho so (STORAGE_DIR/<ho_so_id>/).
+
+    Dung khi xoa han ho so vi pham - don sach ca file vat ly tren dia, khong chi ban ghi DB.
+    """
+    storage_root = Path(settings.STORAGE_DIR).resolve()
+    target_dir = (storage_root / str(ho_so_id)).resolve()
+    if storage_root not in target_dir.parents:
+        return
+    if target_dir.exists() and target_dir.is_dir():
+        shutil.rmtree(target_dir, ignore_errors=True)

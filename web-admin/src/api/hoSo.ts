@@ -14,6 +14,13 @@ export async function listHoSo(filter: HoSoFilter = {}): Promise<HoSoViPham[]> {
   return data;
 }
 
+// Danh sach day du cho Ban do so - khong bi gioi han theo pham_vi_xem cua tai khoan,
+// de moi can bo deu thay toan bo vu viec tren dia ban khi xem ban do tong quan.
+export async function listHoSoBanDo(filter: Pick<HoSoFilter, "thon_id" | "trang_thai_xu_ly"> = {}): Promise<HoSoViPham[]> {
+  const { data } = await apiClient.get("/ho-so/ban-do", { params: filter });
+  return data;
+}
+
 export async function getHoSo(id: string): Promise<HoSoViPham> {
   const { data } = await apiClient.get(`/ho-so/${id}`);
   return data;
@@ -36,12 +43,32 @@ export async function createHoSo(payload: HoSoCreatePayload): Promise<HoSoViPham
   return data;
 }
 
-export async function updateHoSo(
-  id: string,
-  payload: Partial<Pick<HoSoViPham, "trang_thai_xu_ly" | "so_tien_phat" | "hanh_vi_mo_ta_them">>
-) {
+export interface HoSoUpdatePayload
+  extends Partial<
+    Pick<
+      HoSoViPham,
+      | "trang_thai_xu_ly"
+      | "so_tien_phat"
+      | "hanh_vi_mo_ta_them"
+      | "kinh_do"
+      | "vi_do"
+      | "dia_chi_map"
+      | "doi_tuong_id"
+      | "thon_id"
+      | "linh_vuc_id"
+    >
+  > {
+  hanh_vi_id?: string | null;
+}
+
+export async function updateHoSo(id: string, payload: HoSoUpdatePayload) {
   const { data } = await apiClient.put(`/ho-so/${id}`, payload);
   return data as HoSoViPham;
+}
+
+// Chi Quan tri vien duoc phep (backend kiem tra require_admin).
+export async function deleteHoSo(id: string) {
+  await apiClient.delete(`/ho-so/${id}`);
 }
 
 export async function listHoSoFiles(hoSoId: string): Promise<HoSoFile[]> {

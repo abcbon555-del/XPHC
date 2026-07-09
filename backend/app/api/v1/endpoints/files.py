@@ -10,7 +10,7 @@ from app.db.session import get_db
 from app.models.ho_so import HoSoViPham
 from app.models.ho_so_file import HoSoFile
 from app.schemas.ho_so import HoSoFileOut
-from app.services.storage_service import save_upload_file
+from app.services.storage_service import delete_stored_file, save_upload_file
 
 router = APIRouter(prefix="/ho-so/{ho_so_id}/files", tags=["ho-so-files"])
 
@@ -60,5 +60,7 @@ async def delete_file(
     ho_so_file = await db.get(HoSoFile, file_id)
     if ho_so_file is None or ho_so_file.ho_so_id != ho_so_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tệp")
+    duong_dan = ho_so_file.duong_dan
     await db.delete(ho_so_file)
     await db.commit()
+    delete_stored_file(duong_dan)

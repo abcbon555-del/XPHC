@@ -1006,6 +1006,33 @@ table.data-table tbody tr:hover {
   width: 220px;
 }
 
+.print-letterhead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.print-letterhead-col {
+  flex: 1;
+}
+
+.print-letterhead-agency,
+.print-letterhead-quochieu {
+  text-transform: uppercase;
+}
+
+.print-letterhead-unit,
+.print-letterhead-tieungu {
+  display: inline-block;
+  margin-top: 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #000;
+}
+
 @media print {
   .no-print,
   .app-sidebar,
