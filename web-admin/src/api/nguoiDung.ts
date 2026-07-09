@@ -34,6 +34,12 @@ export async function deactivateNguoiDung(id: string) {
   await apiClient.delete(`/nguoi-dung/${id}`);
 }
 
+// Xoa cung - chi thanh cong neu tai khoan chua tung co hoat dong nao duoc ghi lai
+// (backend tra 409 neu da co lich su, luc do nen dung deactivateNguoiDung thay the).
+export async function xoaVinhVienNguoiDung(id: string) {
+  await apiClient.delete(`/nguoi-dung/${id}/vinh-vien`);
+}
+
 export async function uploadAvatar(id: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);

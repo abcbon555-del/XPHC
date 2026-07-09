@@ -53,6 +53,7 @@ class HoSoOut(HoSoBase):
     ngay_lap: datetime
     trang_thai_xu_ly: str
     nguoi_lap_id: uuid.UUID
+    nguoi_lap_ho_ten: str
     created_at: datetime
     updated_at: datetime
 

@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
@@ -63,6 +64,32 @@ async def deactivate_nguoi_dung(user_id: uuid.UUID, db: AsyncSession = Depends(g
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Không thể vô hiệu hóa tài khoản Quản trị viên")
     user.is_active = False
     await db.commit()
+
+
+@router.delete("/{user_id}/vinh-vien", status_code=status.HTTP_204_NO_CONTENT)
+async def xoa_vinh_vien_nguoi_dung(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """Xoa cung tai khoan da nhap nham/khong con dung. Chi thanh cong neu tai khoan
+    chua tung co hoat dong nao duoc ghi lai (chua lap ho so, chua upload file, chua co
+    nhat ky he thong) - neu da co, tra ve 409 va nguoi dung nen dung Vo hieu hoa thay the,
+    vi day la co che bao ve tinh toan ven cua nhat ky he thong (audit_log)."""
+    user = await db.get(NguoiDung, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài khoản")
+    if user.is_admin:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Không thể xóa tài khoản Quản trị viên")
+
+    await db.delete(user)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail=(
+                "Không thể xóa vĩnh viễn: tài khoản đã có lịch sử hoạt động trong hệ thống "
+                "(lập hồ sơ, tải tệp, hoặc nhật ký hệ thống). Vui lòng dùng chức năng Vô hiệu hóa thay thế."
+            ),
+        )
 
 
 @router.post("/{user_id}/avatar", response_model=NguoiDungOut)

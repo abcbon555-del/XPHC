@@ -84,6 +84,7 @@ export interface HoSoViPham {
   trang_thai_xu_ly: TrangThaiHoSo;
   so_tien_phat: number;
   nguoi_lap_id: string;
+  nguoi_lap_ho_ten: string;
   created_at: string;
   updated_at: string;
 }

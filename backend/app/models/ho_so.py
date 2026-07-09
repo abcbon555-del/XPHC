@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.db.base import Base
@@ -48,6 +48,13 @@ class HoSoViPham(Base):
     nguoi_lap_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("nguoi_dung.id"), nullable=False
     )
+    # lazy="joined": luon JOIN san khi truy van ho so, de lay ten nguoi lap bien ban
+    # hien thi khi in - khong can goi rieng API /nguoi-dung (endpoint do chi Admin duoc goi).
+    nguoi_lap = relationship("NguoiDung", foreign_keys=[nguoi_lap_id], lazy="joined")
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    @property
+    def nguoi_lap_ho_ten(self) -> str:
+        return self.nguoi_lap.ho_ten if self.nguoi_lap else ""

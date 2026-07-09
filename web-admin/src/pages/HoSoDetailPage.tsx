@@ -6,7 +6,6 @@ import { deleteHoSo, getHoSo, listHoSoFiles, updateHoSo } from "../api/hoSo";
 import { listThon } from "../api/thon";
 import { listLinhVuc, listHanhVi } from "../api/danhMuc";
 import { getDoiTuong } from "../api/doiTuong";
-import { listNguoiDung } from "../api/nguoiDung";
 import { resolveFileUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useConfig } from "../context/ConfigContext";
@@ -84,11 +83,6 @@ export function HoSoDetailPage() {
     queryFn: () => getDoiTuong(hoSo!.doi_tuong_id),
     enabled: !!hoSo,
   });
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ["nguoi-dung"],
-    queryFn: listNguoiDung,
-    enabled: !!user?.is_admin,
-  });
 
   const updateMutation = useMutation({
     mutationFn: (trang_thai_xu_ly: TrangThaiHoSo) => updateHoSo(id!, { trang_thai_xu_ly }),
@@ -158,11 +152,6 @@ export function HoSoDetailPage() {
   const hanhViTen = hoSo.hanh_vi_id
     ? hanhViList.find((h) => h.id === hoSo.hanh_vi_id)?.ten_hanh_vi ?? ""
     : "Khác (xem mô tả chi tiết)";
-  const nguoiLapTen = user?.is_admin
-    ? allUsers.find((u) => u.id === hoSo.nguoi_lap_id)?.ho_ten ?? "—"
-    : hoSo.nguoi_lap_id === user?.id
-      ? user.ho_ten
-      : "—";
   const coQuanVietTat = config.ten_co_quan_chu_quan.toUpperCase().replace("ỦY BAN NHÂN DÂN", "UBND");
 
   return (
@@ -397,7 +386,7 @@ export function HoSoDetailPage() {
             <tr><td>Tọa độ</td><td>{hoSo.vi_do}, {hoSo.kinh_do}</td></tr>
             <tr><td>Trạng thái xử lý</td><td>{TRANG_THAI_LABEL[hoSo.trang_thai_xu_ly]}</td></tr>
             <tr><td>Số tiền phạt</td><td>{hoSo.so_tien_phat.toLocaleString("vi-VN")} VNĐ</td></tr>
-            <tr><td>Người lập biên bản</td><td>{nguoiLapTen}</td></tr>
+            <tr><td>Người lập biên bản</td><td>{hoSo.nguoi_lap_ho_ten}</td></tr>
           </tbody>
         </table>
 
@@ -452,6 +441,11 @@ export function HoSoDetailPage() {
             <div style={{ fontWeight: 700 }}>Người lập biên bản</div>
             <div className="text-muted" style={{ fontSize: 12 }}>(Ký, ghi rõ họ tên)</div>
           </div>
+        </div>
+
+        <div className="print-footer-note">
+          Biên bản được thiết lập trên môi trường điện tử, thông tin vi phạm và hình ảnh của hành vi vi phạm được
+          dùng làm căn cứ giải quyết.
         </div>
         </div>
       </div>

@@ -90,6 +90,7 @@ async def create_ho_so(
 ):
     so_bien_ban = await generate_so_bien_ban(db)
     ho_so = HoSoViPham(**payload.model_dump(), so_bien_ban=so_bien_ban, nguoi_lap_id=current_user.id)
+    ho_so.nguoi_lap = current_user
     db.add(ho_so)
     await db.commit()
     await db.refresh(ho_so)

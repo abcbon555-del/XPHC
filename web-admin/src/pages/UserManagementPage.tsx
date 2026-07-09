@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import {
   createNguoiDung,
   deactivateNguoiDung,
@@ -7,6 +8,7 @@ import {
   listNguoiDung,
   updateNguoiDung,
   uploadAvatar,
+  xoaVinhVienNguoiDung,
 } from "../api/nguoiDung";
 import { listThon } from "../api/thon";
 import { resolveFileUrl } from "../api/client";
@@ -138,6 +140,11 @@ export function UserManagementPage() {
     onSuccess: invalidate,
   });
 
+  const xoaVinhVienMutation = useMutation({
+    mutationFn: (id: string) => xoaVinhVienNguoiDung(id),
+    onSuccess: invalidate,
+  });
+
   const uploadAvatarMutation = useMutation({
     mutationFn: ({ id, file }: { id: string; file: File }) => uploadAvatar(id, file),
     onSuccess: invalidate,
@@ -170,6 +177,16 @@ export function UserManagementPage() {
   function handleDeactivate(user: NguoiDung) {
     if (window.confirm(`Xóa tài khoản "${user.ho_ten}"? Tài khoản sẽ bị vô hiệu hóa (giữ lại lịch sử hồ sơ đã lập).`)) {
       deactivateMutation.mutate(user.id);
+    }
+  }
+
+  function handleXoaVinhVien(user: NguoiDung) {
+    if (
+      window.confirm(
+        `Xóa VĨNH VIỄN tài khoản "${user.ho_ten}"? Chỉ thực hiện được nếu tài khoản này chưa từng có hoạt động nào được ghi lại (chưa lập hồ sơ/tải tệp). Không thể hoàn tác.`
+      )
+    ) {
+      xoaVinhVienMutation.mutate(user.id);
     }
   }
 
@@ -369,9 +386,9 @@ export function UserManagementPage() {
         </div>
       </form>
 
-      {deactivateMutation.error && (
+      {(deactivateMutation.error || xoaVinhVienMutation.error) && (
         <div className="error-banner" style={{ marginBottom: 12 }}>
-          {extractErrorMessage(deactivateMutation.error)}
+          {extractErrorMessage(deactivateMutation.error ?? xoaVinhVienMutation.error)}
         </div>
       )}
 
@@ -409,6 +426,16 @@ export function UserManagementPage() {
                     {!u.is_admin && u.is_active && (
                       <button onClick={() => handleDeactivate(u)} className="btn btn-danger btn-sm">
                         Xóa tài khoản
+                      </button>
+                    )}
+                    {!u.is_admin && (
+                      <button
+                        onClick={() => handleXoaVinhVien(u)}
+                        className="btn btn-danger btn-sm"
+                        disabled={xoaVinhVienMutation.isPending}
+                        title="Xóa vĩnh viễn khỏi hệ thống (chỉ thành công nếu chưa từng có hoạt động)"
+                      >
+                        <Trash2 size={13} /> Xóa vĩnh viễn
                       </button>
                     )}
                   </div>

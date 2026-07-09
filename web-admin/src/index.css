@@ -1006,6 +1006,17 @@ table.data-table tbody tr:hover {
   width: 220px;
 }
 
+.print-footer-note {
+  margin-top: 40px;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+  font-size: 11px;
+  font-style: italic;
+  color: #555;
+  text-align: center;
+  break-inside: avoid;
+}
+
 .print-letterhead {
   display: flex;
   justify-content: space-between;
