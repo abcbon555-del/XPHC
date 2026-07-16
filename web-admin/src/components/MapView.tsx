@@ -91,14 +91,29 @@ export function MapView({ hoSoList, thonMap }: Props) {
       const thonTen = thonMap[hoSo.thon_id]?.ten_thon ?? "";
       const popupHtml = document.createElement("div");
       popupHtml.style.cssText = "min-width:220px;font-family:var(--font-sans, inherit);font-size:13px;line-height:1.7";
-      popupHtml.innerHTML = `
-        <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:#1a2333">${hoSo.so_bien_ban}</div>
-        <div><span style="color:#667085">Thôn:</span> ${thonTen}</div>
-        <div><span style="color:#667085">Địa chỉ:</span> ${hoSo.dia_chi_map ?? "(chưa có)"}</div>
-        <div><span style="color:#667085">Ngày lập:</span> ${new Date(hoSo.ngay_lap).toLocaleDateString("vi-VN")}</div>
-        <div><span style="color:#667085">Trạng thái:</span> ${TRANG_THAI_TEXT[hoSo.trang_thai_xu_ly]}</div>
-        <div><span style="color:#667085">Số tiền phạt:</span> ${hoSo.so_tien_phat.toLocaleString("vi-VN")} VNĐ</div>
-      `;
+
+      // Dung textContent (khong dung innerHTML) de tranh Stored XSS: dia_chi_map va ten thon
+      // la du lieu nguoi dung nhap, neu noi chuoi vao innerHTML se thuc thi script.
+      const title = document.createElement("div");
+      title.style.cssText = "font-weight:700;font-size:14px;margin-bottom:4px;color:#1a2333";
+      title.textContent = hoSo.so_bien_ban;
+      popupHtml.appendChild(title);
+
+      const addRow = (label: string, value: string) => {
+        const row = document.createElement("div");
+        const b = document.createElement("span");
+        b.style.color = "#667085";
+        b.textContent = `${label} `;
+        row.appendChild(b);
+        row.appendChild(document.createTextNode(value));
+        popupHtml.appendChild(row);
+      };
+      addRow("Thôn:", thonTen);
+      addRow("Địa chỉ:", hoSo.dia_chi_map ?? "(chưa có)");
+      addRow("Ngày lập:", new Date(hoSo.ngay_lap).toLocaleDateString("vi-VN"));
+      addRow("Trạng thái:", TRANG_THAI_TEXT[hoSo.trang_thai_xu_ly]);
+      addRow("Số tiền phạt:", `${hoSo.so_tien_phat.toLocaleString("vi-VN")} VNĐ`);
+
       const btn = document.createElement("button");
       btn.textContent = "Mở hồ sơ gốc →";
       btn.style.cssText =

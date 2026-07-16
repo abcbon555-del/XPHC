@@ -4,11 +4,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.middleware.audit_middleware import AuditLogMiddleware
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Them cac header bao mat co ban (defense-in-depth) cho moi phan hoi."""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=()"
+        if settings.is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
 app = FastAPI(
     title=settings.TEN_DON_VI,
@@ -36,6 +51,7 @@ app.add_middleware(
 )
 
 app.add_middleware(AuditLogMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(api_router)
 
