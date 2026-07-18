@@ -1,0 +1,93 @@
+# ============================================================================
+# Trien khai PRODUCTION cho ung dung XPHC.
+# Kien truc: Caddy (HTTPS tu dong) -> phuc vu frontend + reverse-proxy /api ->
+#            backend FastAPI -> PostgreSQL. File luu tren volume ben vung.
+#
+# Chay:  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+# Xem huong dan day du: docs/DEPLOYMENT.md
+# ============================================================================
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: xphc_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Can dat POSTGRES_PASSWORD trong .env.production}
+      # Mat khau cho role runtime xphc_app_role (init-role.sh dung bien nay)
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Can dat APP_DB_PASSWORD trong .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/docker/init-role.sh:/docker-entrypoint-initdb.d/init-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # KHONG mo cong 5432 ra ngoai - database chi truy cap noi bo
+
+  # Job mot lan: tao schema bang role owner (postgres) roi cap quyen co kiem soat
+  # cho xphc_app_role. Xong thi thoat. Backend chi khoi dong sau khi job nay xong.
+  migrate:
+    build:
+      context: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/xphc_db
+    command: sh -c "alembic upgrade head && python scripts/grant_app_role.py"
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ENVIRONMENT: production
+      # Backend ket noi bang role runtime (KHONG phai owner) - bao ve audit_log
+      DATABASE_URL: postgresql+asyncpg://xphc_app_role:${APP_DB_PASSWORD}@db:5432/xphc_db
+      SECRET_KEY: ${SECRET_KEY:?Can dat SECRET_KEY ngau nhien trong .env.production}
+      CORS_ORIGINS: https://${DOMAIN}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-25}
+      # ----- White-label: doi cho tung don vi -----
+      TEN_DON_VI: ${TEN_DON_VI:-Phần mềm quản lý XPHC}
+      TEN_DIA_PHUONG: ${TEN_DIA_PHUONG:-}
+      TEN_CO_QUAN_CHU_QUAN: ${TEN_CO_QUAN_CHU_QUAN:-}
+      MO_TA_DON_VI: ${MO_TA_DON_VI:-Hệ thống quản lý xử lý vi phạm hành chính, trật tự xây dựng, đất đai.}
+      BAN_DO_VI_DO_MAC_DINH: ${BAN_DO_VI_DO_MAC_DINH:-21.0278}
+      BAN_DO_KINH_DO_MAC_DINH: ${BAN_DO_KINH_DO_MAC_DINH:-105.8342}
+      BAN_DO_ZOOM_MAC_DINH: ${BAN_DO_ZOOM_MAC_DINH:-13}
+    volumes:
+      # File dinh kem luu tren volume ben vung - KHONG mat khi redeploy
+      - storage:/app/storage
+
+  web:
+    build:
+      context: ./web-admin
+      args:
+        # Frontend goi API cung origin qua /api/v1 (Caddy reverse-proxy sang backend)
+        VITE_API_BASE_URL: /api/v1
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      DOMAIN: ${DOMAIN:?Can dat DOMAIN (ten mien) trong .env.production}
+      TLS_EMAIL: ${TLS_EMAIL:?Can dat TLS_EMAIL (email nhan chung chi Let's Encrypt)}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:      # du lieu PostgreSQL
+  storage:     # file dinh kem (anh vi pham, tai lieu, avatar)
+  caddy_data:  # chung chi HTTPS (Let's Encrypt)
+  caddy_config:

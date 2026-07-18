@@ -6,12 +6,12 @@ import { deleteHoSo, getHoSo, listHoSoFiles, updateHoSo } from "../api/hoSo";
 import { listThon } from "../api/thon";
 import { listLinhVuc, listHanhVi } from "../api/danhMuc";
 import { getDoiTuong } from "../api/doiTuong";
-import { resolveFileUrl } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useConfig } from "../context/ConfigContext";
 import type { DanhMucFile, TrangThaiHoSo } from "../types";
 import { Layout } from "../components/Layout";
 import { FileCategoryUpload } from "../components/FileCategoryUpload";
+import { SecureImage } from "../components/SecureImage";
 import { LocationPicker } from "../components/LocationPicker";
 import { extractErrorMessage } from "../utils/errors";
 
@@ -415,7 +415,7 @@ export function HoSoDetailPage() {
                 <div className="print-photo-grid">
                   {anh.map((f) => (
                     <div key={f.id} className="print-photo-item">
-                      <img src={resolveFileUrl(f.duong_dan)} alt={f.ten_file_goc} />
+                      <SecureImage path={f.duong_dan} alt={f.ten_file_goc} />
                       <div className="print-photo-caption">{f.ten_file_goc}</div>
                     </div>
                   ))}

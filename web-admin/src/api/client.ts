@@ -9,12 +9,6 @@ function resolveDefaultApiBase(): string {
 }
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? resolveDefaultApiBase();
-export const FILE_BASE_URL = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
-
-export function resolveFileUrl(duongDan?: string | null): string | undefined {
-  if (!duongDan) return undefined;
-  return `${FILE_BASE_URL}/${duongDan.replace(/^\/+/, "")}`;
-}
 
 const ACCESS_TOKEN_KEY = "xphc_access_token";
 const REFRESH_TOKEN_KEY = "xphc_refresh_token";
@@ -73,3 +67,31 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ===== Tep dinh kem: tai qua endpoint co xac thuc (khong con URL public) =====
+
+// Tai tep ve dang Blob object URL de gan vao <img>. Nho revoke sau khi dung (xem SecureImage).
+export async function fetchFileObjectUrl(duongDan?: string | null): Promise<string | undefined> {
+  if (!duongDan) return undefined;
+  const { data } = await apiClient.get("/files/tai-xuong", {
+    params: { path: duongDan },
+    responseType: "blob",
+  });
+  return URL.createObjectURL(data);
+}
+
+// Tai tep xuong may (dung cho tep khong phai anh: PDF, Word, Excel...).
+export async function downloadFile(duongDan: string, tenFile: string): Promise<void> {
+  const { data } = await apiClient.get("/files/tai-xuong", {
+    params: { path: duongDan },
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = tenFile;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

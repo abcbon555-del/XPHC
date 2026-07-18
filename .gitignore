@@ -22,6 +22,10 @@ mobile-app/.flutter-plugins-dependencies
 mobile-app/android/local.properties
 mobile-app/ios/Pods/
 
+# Production secrets & backups (KHONG duoc commit)
+.env.production
+backups/
+
 # OS
 .DS_Store
 Thumbs.db

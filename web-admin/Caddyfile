@@ -1,0 +1,31 @@
+# Caddy tu dong cap + gia han chung chi HTTPS (Let's Encrypt) cho {$DOMAIN}.
+{
+	email {$TLS_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# /api/* va /health -> backend FastAPI
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /health {
+		reverse_proxy backend:8000
+	}
+
+	# Con lai: phuc vu frontend (SPA - moi route ve index.html)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Header bao mat bo sung o tang canh (backend cung tu them)
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		-Server
+	}
+}

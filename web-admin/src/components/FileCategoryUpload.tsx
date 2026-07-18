@@ -4,7 +4,7 @@ import { FileText, Trash2, UploadCloud } from "lucide-react";
 import { deleteHoSoFile, listHoSoFiles, uploadHoSoFile } from "../api/hoSo";
 import type { DanhMucFile } from "../types";
 import { useAuth } from "../context/AuthContext";
-import { resolveFileUrl } from "../api/client";
+import { downloadFile } from "../api/client";
 import { extractErrorMessage } from "../utils/errors";
 
 interface Props {
@@ -52,14 +52,14 @@ export function FileCategoryUpload({ hoSoId, danhMuc, title }: Props) {
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}
           >
             <FileText size={15} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
-            <a
-              href={resolveFileUrl(f.duong_dan)}
-              target="_blank"
-              rel="noreferrer"
-              style={{ fontSize: 13, color: "var(--color-accent)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            <button
+              type="button"
+              onClick={() => downloadFile(f.duong_dan, f.ten_file_goc)}
+              title="Tải tệp về máy"
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--color-accent)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
             >
               {f.ten_file_goc}
-            </a>
+            </button>
             {canUpload && (
               <button
                 onClick={() => deleteMutation.mutate(f.id)}

@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, FilePlus2, FolderClosed, MapPinned, Users, FileSpreadsheet, ScrollText, LogOut, Landmark, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useConfig } from "../context/ConfigContext";
-import { resolveFileUrl } from "../api/client";
+import { SecureImage } from "./SecureImage";
 
 interface NavItem {
   to: string;
@@ -103,7 +103,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="app-user">
             <div className="app-user-avatar">
               {user?.anh_dai_dien ? (
-                <img src={resolveFileUrl(user.anh_dai_dien)} alt={user.ho_ten} />
+                <SecureImage path={user.anh_dai_dien} alt={user.ho_ten} fallback={initials(user?.ho_ten)} />
               ) : (
                 initials(user?.ho_ten)
               )}

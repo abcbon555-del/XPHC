@@ -11,9 +11,9 @@ import {
   xoaVinhVienNguoiDung,
 } from "../api/nguoiDung";
 import { listThon } from "../api/thon";
-import { resolveFileUrl } from "../api/client";
 import type { NguoiDung, PhamViXem } from "../types";
 import { Layout } from "../components/Layout";
+import { SecureImage } from "../components/SecureImage";
 import { extractErrorMessage } from "../utils/errors";
 
 interface FormState {
@@ -50,17 +50,7 @@ function initials(name?: string) {
   return parts.length === 1 ? parts[0][0] : parts[0][0] + parts[parts.length - 1][0];
 }
 
-function AvatarThumb({ user, size = 34 }: { user: NguoiDung; size?: number }) {
-  const src = resolveFileUrl(user.anh_dai_dien);
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={user.ho_ten}
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", border: "1px solid var(--color-border)" }}
-      />
-    );
-  }
+function AvatarPlaceholder({ user, size }: { user: NguoiDung; size: number }) {
   return (
     <div
       style={{
@@ -78,6 +68,18 @@ function AvatarThumb({ user, size = 34 }: { user: NguoiDung; size?: number }) {
     >
       {initials(user.ho_ten)}
     </div>
+  );
+}
+
+function AvatarThumb({ user, size = 34 }: { user: NguoiDung; size?: number }) {
+  if (!user.anh_dai_dien) return <AvatarPlaceholder user={user} size={size} />;
+  return (
+    <SecureImage
+      path={user.anh_dai_dien}
+      alt={user.ho_ten}
+      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", border: "1px solid var(--color-border)" }}
+      fallback={<AvatarPlaceholder user={user} size={size} />}
+    />
   );
 }
 

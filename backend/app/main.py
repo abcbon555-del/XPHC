@@ -2,7 +2,6 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -33,8 +32,9 @@ app = FastAPI(
     openapi_url=None if settings.is_production else "/openapi.json",
 )
 
+# Tep dinh kem KHONG duoc mount public nua. Tao thu muc de luu, con viec phuc vu tep
+# di qua endpoint co xac thuc GET /api/v1/files/tai-xuong (xem endpoints/tai_file.py).
 Path(settings.STORAGE_DIR).mkdir(parents=True, exist_ok=True)
-app.mount("/storage", StaticFiles(directory=settings.STORAGE_DIR), name="storage")
 
 # O development, IP LAN cua may chu co the doi theo DHCP - cho phep bat ky origin nao
 # trong dai IP rieng (192.168.x.x, 10.x.x.x) tren cong 5173 de khong phai sua CORS_ORIGINS
