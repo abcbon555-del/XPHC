@@ -21,6 +21,25 @@ export async function listHoSoBanDo(filter: Pick<HoSoFilter, "thon_id" | "trang_
   return data;
 }
 
+// Chi Admin: tai toan bo ho so (theo Thon -> vu viec, kem anh + tai lieu) ve may dang ZIP.
+export async function taiToanBoHoSoZip(): Promise<void> {
+  const res = await apiClient.get("/ho-so/xuat-ho-so-giay", { responseType: "blob" });
+  // Lay ten file tu Content-Disposition, fallback theo ngay
+  let tenFile = `Ho-so-vi-pham-${new Date().toISOString().slice(0, 10)}.zip`;
+  const cd = res.headers["content-disposition"] as string | undefined;
+  const match = cd?.match(/filename="?([^"]+)"?/);
+  if (match) tenFile = match[1];
+
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = tenFile;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function getHoSo(id: string): Promise<HoSoViPham> {
   const { data } = await apiClient.get(`/ho-so/${id}`);
   return data;

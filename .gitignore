@@ -26,6 +26,9 @@ mobile-app/ios/Pods/
 .env.production
 backups/
 
+# Ban clone long nhau bi vo tinh tao trong thu muc du an (chua .env.production that)
+XPHC/
+
 # OS
 .DS_Store
 Thumbs.db

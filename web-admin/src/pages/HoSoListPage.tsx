@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FilePlus2, Trash2 } from "lucide-react";
-import { deleteHoSo, listHoSo } from "../api/hoSo";
+import { ArrowRight, Download, FilePlus2, Trash2 } from "lucide-react";
+import { deleteHoSo, listHoSo, taiToanBoHoSoZip } from "../api/hoSo";
 import { listThon } from "../api/thon";
 import type { TrangThaiHoSo } from "../types";
 import { Layout } from "../components/Layout";
@@ -44,6 +44,8 @@ export function HoSoListPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ho-so-list"] }),
   });
 
+  const taiZipMutation = useMutation({ mutationFn: () => taiToanBoHoSoZip() });
+
   function handleDelete(id: string, soBienBan: string) {
     if (window.confirm(`Xóa vĩnh viễn hồ sơ "${soBienBan}"? Toàn bộ tệp đính kèm sẽ bị xóa theo. Không thể hoàn tác.`)) {
       deleteMutation.mutate(id);
@@ -59,12 +61,31 @@ export function HoSoListPage() {
           <h1 className="page-title">Danh sách hồ sơ vi phạm</h1>
           <p className="page-subtitle">Tra cứu, lọc theo thôn và khoảng thời gian lập biên bản.</p>
         </div>
-        {(user?.is_admin || user?.quyen_nhap_lieu) && (
-          <Link to="/ho-so/moi" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
-            <FilePlus2 size={15} /> Lập biên bản mới
-          </Link>
-        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {user?.is_admin && (
+            <button
+              className="btn btn-secondary"
+              style={{ whiteSpace: "nowrap" }}
+              onClick={() => taiZipMutation.mutate()}
+              disabled={taiZipMutation.isPending}
+              title="Tải toàn bộ hồ sơ (theo thôn, kèm ảnh + tài liệu) về máy dạng ZIP"
+            >
+              <Download size={15} /> {taiZipMutation.isPending ? "Đang chuẩn bị..." : "Lưu hồ sơ về máy"}
+            </button>
+          )}
+          {(user?.is_admin || user?.quyen_nhap_lieu) && (
+            <Link to="/ho-so/moi" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
+              <FilePlus2 size={15} /> Lập biên bản mới
+            </Link>
+          )}
+        </div>
       </div>
+
+      {taiZipMutation.isError && (
+        <div className="error-banner" style={{ marginBottom: 12 }}>
+          {extractErrorMessage(taiZipMutation.error)}
+        </div>
+      )}
 
       <div className="card card-pad" style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>

@@ -37,9 +37,10 @@ function makeColoredIcon(color: string) {
 interface Props {
   hoSoList: HoSoViPham[];
   thonMap: Record<string, Thon>;
+  flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-export function MapView({ hoSoList, thonMap }: Props) {
+export function MapView({ hoSoList, thonMap, flyTo }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -125,6 +126,13 @@ export function MapView({ hoSoList, thonMap }: Props) {
       layer.addLayer(marker);
     });
   }, [hoSoList, thonMap, navigate]);
+
+  // Khi nguoi dung chon xa/dia diem -> ban do bay ve vi tri do
+  useEffect(() => {
+    if (flyTo && mapRef.current) {
+      mapRef.current.flyTo([flyTo.lat, flyTo.lng], flyTo.zoom ?? 14, { duration: 1.2 });
+    }
+  }, [flyTo]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%", minHeight: 500 }} />;
 }

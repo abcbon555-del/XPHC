@@ -5,6 +5,7 @@ import { listThon } from "../api/thon";
 import type { Thon, TrangThaiHoSo } from "../types";
 import { MapView } from "../components/MapView";
 import { ThonStatsChart } from "../components/ThonStatsChart";
+import { TimKiemXa } from "../components/TimKiemXa";
 import { Layout } from "../components/Layout";
 
 const TRANG_THAI_LABEL: Record<TrangThaiHoSo, string> = {
@@ -22,6 +23,7 @@ const BADGE_CLASS: Record<TrangThaiHoSo, string> = {
 export function DashboardMapPage() {
   const [thonId, setThonId] = useState<string>("");
   const [trangThai, setTrangThai] = useState<TrangThaiHoSo | "">("");
+  const [viTriBanDo, setViTriBanDo] = useState<{ lat: number; lng: number } | null>(null);
 
   const { data: thonList = [] } = useQuery({ queryKey: ["thon"], queryFn: listThon });
   const { data: hoSoList = [], isLoading } = useQuery({
@@ -81,35 +83,38 @@ export function DashboardMapPage() {
       </div>
 
       <div className="card card-pad" style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <select className="input" style={{ width: 200 }} value={thonId} onChange={(e) => setThonId(e.target.value)}>
-            <option value="">Tất cả Thôn</option>
-            {thonList.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.ten_thon}
-              </option>
-            ))}
-          </select>
-          <select
-            className="input"
-            style={{ width: 280 }}
-            value={trangThai}
-            onChange={(e) => setTrangThai(e.target.value as TrangThaiHoSo | "")}
-          >
-            <option value="">Tất cả trạng thái</option>
-            {Object.entries(TRANG_THAI_LABEL).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-          {isLoading && <span className="text-muted">Đang tải...</span>}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <TimKiemXa onChon={(d) => setViTriBanDo({ lat: d.lat, lng: d.lng })} />
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <select className="input" style={{ width: 200 }} value={thonId} onChange={(e) => setThonId(e.target.value)}>
+              <option value="">Tất cả Thôn</option>
+              {thonList.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.ten_thon}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input"
+              style={{ width: 280 }}
+              value={trangThai}
+              onChange={(e) => setTrangThai(e.target.value as TrangThaiHoSo | "")}
+            >
+              <option value="">Tất cả trạng thái</option>
+              {Object.entries(TRANG_THAI_LABEL).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {isLoading && <span className="text-muted">Đang tải...</span>}
+          </div>
         </div>
       </div>
 
       <div className="dashboard-split">
         <div className="card" style={{ height: "62vh", overflow: "hidden" }}>
-          <MapView hoSoList={hoSoList} thonMap={thonMap} />
+          <MapView hoSoList={hoSoList} thonMap={thonMap} flyTo={viTriBanDo} />
         </div>
 
         <div className="card card-pad" style={{ height: "62vh", overflow: "auto" }}>

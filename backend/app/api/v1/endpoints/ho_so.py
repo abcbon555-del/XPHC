@@ -1,14 +1,18 @@
+import os
 import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.background import BackgroundTask
 
 from app.api.deps import CurrentUser, apply_view_scope_filter, require_admin, require_nhap_lieu
 from app.db.session import get_db
 from app.models.ho_so import HoSoViPham
 from app.schemas.ho_so import HoSoCreate, HoSoOut, HoSoSyncItem, HoSoUpdate
+from app.services.ho_so_export_service import build_zip_ho_so
 from app.services.so_bien_ban_service import generate_so_bien_ban
 from app.services.storage_service import delete_ho_so_directory
 
@@ -72,6 +76,20 @@ async def list_ho_so_ban_do(
         stmt = stmt.where(HoSoViPham.trang_thai_xu_ly == trang_thai_xu_ly)
     result = await db.execute(stmt.order_by(HoSoViPham.ngay_lap.desc()))
     return result.scalars().all()
+
+
+@router.get("/xuat-ho-so-giay")
+async def xuat_ho_so_giay(db: AsyncSession = Depends(get_db), _perm=Depends(require_admin)):
+    """Chi Admin: gom TOAN BO ho so vi pham thanh 1 file ZIP (sap xep theo Thon ->
+    So bien ban, kem day du thong tin + anh + tai lieu) de luu ve may, phuc vu quan ly
+    ho so giay theo tung vu viec."""
+    zip_path, ten_tai = await build_zip_ho_so(db)
+    return FileResponse(
+        zip_path,
+        media_type="application/zip",
+        filename=ten_tai,
+        background=BackgroundTask(os.unlink, zip_path),  # xoa file tam sau khi tra xong
+    )
 
 
 @router.get("/{ho_so_id}", response_model=HoSoOut)
